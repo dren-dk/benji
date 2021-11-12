@@ -214,11 +214,13 @@ def determine_rbd_image_from_pv(
         if driver.startswith('ceph.rook.io/') and options.get('pool') and options.get('image'):
             pool, image = options['pool'], options['image']
     elif (hasattr(pv.spec, 'csi') and hasattr(pv.spec.csi, 'driver') and
-          pv.spec.csi.driver in ('rook-ceph.rbd.csi.ceph.com', 'rbd.csi.ceph.com') and
+          pv.spec.csi.driver.endswith('rbd.csi.ceph.com') and   # Rook maybe not install in rook-ceph namespace.
           hasattr(pv.spec.csi, 'volume_handle') and pv.spec.csi.volume_handle and
           hasattr(pv.spec.csi, 'volume_attributes') and pv.spec.csi.volume_attributes.get('pool')):
         attributes = pv.spec.csi.volume_attributes
-        volume_handle_parts = pv.spec.csi.volume_handle.split('-')
+        pool, image = attributes['pool'], attributes['imageName']
+
+        #volume_handle_parts = pv.spec.csi.volume_handle.split('-')
         # Why not use attributes['imageName'] which contains the full image name without any extra fuss?
         # We are already using attributes['pool'] even though that information is also carried (in a silly format) in the handle
         # so using the plain attribues should not be a huge deal.
@@ -233,10 +235,10 @@ def determine_rbd_image_from_pv(
         # The ceph-csi parser says nothing about the format for imageName or the imageSuffix, so it's more
         # correct to parse the volume handle from the start, rather than the end.
                                                                                                                                                           
-        if len(volume_handle_parts) >= 9:
-            image_prefix = attributes.get('volumeNamePrefix', 'csi-vol-')
-            image_suffix = '-'.join(volume_handle_parts[4:])
-            pool, image = attributes['pool'], image_prefix + image_suffix
+        #if len(volume_handle_parts) >= 9:
+        #    image_prefix = attributes.get('volumeNamePrefix', 'csi-vol-')
+        #    image_suffix = '-'.join(volume_handle_parts[4:])
+        #    pool, image = attributes['pool'], image_prefix + image_suffix
 
     return pool, image
 
